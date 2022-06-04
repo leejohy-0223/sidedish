@@ -4,7 +4,7 @@ name: test-deploy
 
 on:
   push:
-    branches: [ "team-27" ]
+    branches: [ "test-deploy-lucid" ]
 
 jobs:
   # This workflow contains a single job called "build"

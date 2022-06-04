@@ -12,13 +12,12 @@ permissions:
 env:
   S3_BUCKET_NAME: lucid-deploy-bucket
   PROJECT_NAME: test-deploy-lucid
+  WORKING_DIRECTORY: ./backend
 
 jobs:
   build:
     name: deploy to staging
     runs-on: ubuntu-latest
-    env:
-      WORKING_DIRECTORY: ./backend
 
     steps:
       - name: ✅ Checkout

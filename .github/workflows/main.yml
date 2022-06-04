@@ -6,24 +6,57 @@ on:
   push:
     branches: [test-deploy-lucid]
 
+permissions:
+  contents: read
+  
+env:
+  S3_BUCKET_NAME: lucid-deploy-bucket
+  PROJECT_NAME: test-deploy-lucid
+
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     name: deploy to staging
     runs-on: ubuntu-latest
+    env:
+      working-directory: ./backend
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+      - name: ✅ Checkout
+        uses: actions/checkout@v3
+      
+      - name: ⚙️ Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: "11"
+          distribution: "temurin"
+          
+      - name: 🔐 Grant execution permission for gradlew
+        run: chmod +x gradlew
+        shell: bash
+        working-directory: ${{env.working-directory}}
+        
+      - name: 🔧 Build with Gradle
+        run: ./gradlew bootjar
+        shell: bash
+        working-directory: ${{env.working-directory}}
+        
+      - name: 🔧 Make zip file  
+        run: zip -r ./$GITHUB_SHA.zip .
+        shell: bash
+        working-directory: ${{env.working-directory}}
+        
+      - name: ⚙️ Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{secrets.AWS_REGION}}
+          
+      - name: ⬆️ Upload to S3
+        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://$S3_BUCKET_NAME/$PROJECT_NAME/$GITHUB_SHA/zip
+        working-directory: ${{env.working-directory}}
+        
+#       - name: ➡️ Code Deploy
+#         run: aws deploy create-deployment --application-name sidedish-deploy --deployment-config-name CodeDeployDefault.AllAtOnce --deploy-group-name sidedish-code-deploy --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
+#         working-directory: ${{env.working-directory}}
+        

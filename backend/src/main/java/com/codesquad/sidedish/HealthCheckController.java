@@ -8,6 +8,6 @@ public class HealthCheckController {
 
     @GetMapping("/api/check")
     public String healthChecker() {
-        return "ok!!";
+        return "ok!!!";
     }
 }
